@@ -1,7 +1,14 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from '@jest/globals';
 import request from 'supertest';
 import app from '../../src/server/index.js';
-import noteRepository from '../../src/services/notes/repositories/index.js';
+import noteRepository from '../../src/services/notes/repositories/note-repositories.js';
 import {
   clearNotesTable,
   closeTestDatabase,
@@ -24,11 +31,13 @@ describe('Notes API', () => {
   });
 
   it('should create a note via POST /notes', async () => {
-    const response = await request(app).post('/notes').send({
-      title: 'Catatan API',
-      body: 'Isi dari API',
-      tags: ['api'],
-    });
+    const response = await request(app)
+      .post('/notes')
+      .send({
+        title: 'Catatan API',
+        body: 'Isi dari API',
+        tags: ['api'],
+      });
 
     expect(response.statusCode).toBe(201);
     expect(response.body).toMatchObject({
@@ -68,7 +77,9 @@ describe('Notes API', () => {
       title: 'Resep Masak',
     });
 
-    const response = await request(app).get('/notes').query({ title: 'belajar' });
+    const response = await request(app)
+      .get('/notes')
+      .query({ title: 'belajar' });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toMatchObject({
@@ -126,11 +137,13 @@ describe('Notes API', () => {
       title: 'Judul awal',
     });
 
-    const response = await request(app).put('/notes/note-update').send({
-      title: 'Judul baru',
-      body: 'Isi baru',
-      tags: ['baru'],
-    });
+    const response = await request(app)
+      .put('/notes/note-update')
+      .send({
+        title: 'Judul baru',
+        body: 'Isi baru',
+        tags: ['baru'],
+      });
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toMatchObject({

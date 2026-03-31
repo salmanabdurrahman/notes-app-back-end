@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { NotFoundError } from '../../../src/exceptions/index.js';
-import {
-  NoteRepository,
-} from '../../../src/services/notes/repositories/note-repositories.js';
+import { NoteRepository } from '../../../src/services/notes/repositories/note-repositories.js';
 
 describe('NoteRepository', () => {
   let mockPool;
@@ -66,12 +64,7 @@ describe('NoteRepository', () => {
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
         text: expect.stringContaining('INSERT INTO notes'),
-        values: [
-          expect.any(String),
-          'Catatan baru',
-          'Isi catatan',
-          ['baru'],
-        ],
+        values: [expect.any(String), 'Catatan baru', 'Isi catatan', ['baru']],
       })
     );
     expect(note).toEqual(row);

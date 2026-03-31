@@ -1,6 +1,11 @@
 import express from 'express';
-import createNoteController from '../controller/note-controller.js';
-import noteRepository from '../repositories/index.js';
+import {
+  createNote,
+  deleteNoteById,
+  editNoteById,
+  getAllNotes,
+  getNoteById,
+} from '../controller/note-controller.js';
 import validate from '../../../middlewares/validate.js';
 import validateQuery from '../../../middlewares/validate-query.js';
 import {
@@ -8,23 +13,17 @@ import {
   noteQuerySchema,
 } from '../../../services/notes/validator/schema.js';
 
-function createNotesRouter({ repository = noteRepository } = {}) {
-  const router = express.Router();
-  const controller = createNoteController(repository);
+const router = express.Router();
 
-  router
-    .route('/notes')
-    .get(validateQuery(noteQuerySchema), controller.getAllNotes)
-    .post(validate(notePayloadSchema), controller.createNote);
+router
+  .route('/notes')
+  .get(validateQuery(noteQuerySchema), getAllNotes)
+  .post(validate(notePayloadSchema), createNote);
 
-  router
-    .route('/notes/:id')
-    .get(controller.getNoteById)
-    .put(validate(notePayloadSchema), controller.editNoteById)
-    .delete(controller.deleteNoteById);
+router
+  .route('/notes/:id')
+  .get(getNoteById)
+  .put(validate(notePayloadSchema), editNoteById)
+  .delete(deleteNoteById);
 
-  return router;
-}
-
-export { createNotesRouter };
-export default createNotesRouter();
+export default router;

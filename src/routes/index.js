@@ -1,13 +1,8 @@
 import { Router } from 'express';
-import { createNotesRouter } from '../services/notes/routes/index.js';
+import notes from '../services/notes/routes/index.js';
 
-function createRoutes({ noteRepository } = {}) {
-  const router = Router();
+const router = Router();
 
-  router.use('/', createNotesRouter({ repository: noteRepository }));
+router.use('/', notes);
 
-  return router;
-}
-
-export { createRoutes };
-export default createRoutes();
+export default router;

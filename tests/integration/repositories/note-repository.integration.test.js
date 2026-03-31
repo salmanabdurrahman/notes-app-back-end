@@ -1,10 +1,15 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from '@jest/globals';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../../src/config/database.js';
 import { NotFoundError } from '../../../src/exceptions/index.js';
-import {
-  NoteRepository,
-} from '../../../src/services/notes/repositories/note-repositories.js';
+import { NoteRepository } from '../../../src/services/notes/repositories/note-repositories.js';
 import {
   clearNotesTable,
   closeTestDatabase,

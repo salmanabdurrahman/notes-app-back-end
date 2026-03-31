@@ -100,4 +100,7 @@ class NoteRepository {
   }
 }
 
+const noteRepository = new NoteRepository();
+
 export { NoteRepository };
+export default noteRepository;
