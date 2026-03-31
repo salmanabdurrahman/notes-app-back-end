@@ -1,0 +1,38 @@
+{
+  "name": "notes-app-back-end",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon src/server.js",
+    "migrate": "node-pg-migrate",
+    "lint": "eslint ./",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/unit",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/integration",
+    "test:api": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/api"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-dicodingacademy": "^0.9.5",
+    "globals": "^17.4.0",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "supertest": "^7.2.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "joi": "^18.1.2",
+    "nanoid": "^5.1.7",
+    "node-pg-migrate": "^8.0.4",
+    "pg": "^8.20.0"
+  }
+}
