@@ -5,8 +5,17 @@ import { NotFoundError } from '../../core/errors/index.js';
 import { getDatabaseUrl } from '../../config/database.js';
 
 class UserRepository {
-  constructor(pool = new Pool({ connectionString: getDatabaseUrl() })) {
+  constructor(pool = null) {
     this.pool = pool;
+    this.isExternalPool = Boolean(pool);
+  }
+
+  getPool() {
+    if (!this.pool) {
+      this.pool = new Pool({ connectionString: getDatabaseUrl() });
+    }
+
+    return this.pool;
   }
 
   async findById(id) {
@@ -19,7 +28,7 @@ class UserRepository {
       values: [id],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     if (!result.rows.length) {
       throw new NotFoundError('Gagal mengambil pengguna. Id tidak ditemukan');
     }
@@ -40,7 +49,7 @@ class UserRepository {
       values: [id, username, fullname, hashedPassword],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows[0];
   }
 
@@ -54,12 +63,43 @@ class UserRepository {
       values: [username],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows.length > 0;
   }
 
+  async verifyCredentials(username, password) {
+    const query = {
+      text: `
+        SELECT id, username, fullname, password
+        FROM users
+        WHERE username = $1
+      `,
+      values: [username],
+    };
+
+    const result = await this.getPool().query(query);
+    if (!result.rows.length) {
+      return null;
+    }
+
+    const user = result.rows[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    return user;
+  }
+
   async close() {
+    if (!this.pool) {
+      return;
+    }
+
     await this.pool.end();
+    if (!this.isExternalPool) {
+      this.pool = null;
+    }
   }
 }
 

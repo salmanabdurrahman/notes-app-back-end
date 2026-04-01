@@ -9,6 +9,7 @@ import {
 import request from 'supertest';
 import app from '../../src/app.js';
 import noteRepository from '../../src/modules/notes/notes.repository.js';
+import tokenManager from '../../src/shared/utils/token-manager.js';
 import {
   clearNotesTable,
   closeTestDatabase,
@@ -17,12 +18,15 @@ import {
 } from '../helpers/database.js';
 
 describe('Notes API', () => {
+  let accessToken;
+
   beforeAll(async () => {
     await setupTestDatabase();
   });
 
   beforeEach(async () => {
     await clearNotesTable();
+    accessToken = tokenManager.generateAccessToken({ id: 'user-notes-api' });
   });
 
   afterAll(async () => {
@@ -33,6 +37,7 @@ describe('Notes API', () => {
   it('should create a note via POST /notes', async () => {
     const response = await request(app)
       .post('/notes')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({
         title: 'Catatan API',
         body: 'Isi dari API',
@@ -49,11 +54,14 @@ describe('Notes API', () => {
   });
 
   it('should reject invalid payload via POST /notes', async () => {
-    const response = await request(app).post('/notes').send({
-      title: '',
-      body: 'Isi dari API',
-      tags: 'invalid-tag',
-    });
+    const response = await request(app)
+      .post('/notes')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        title: '',
+        body: 'Isi dari API',
+        tags: 'invalid-tag',
+      });
 
     expect(response.statusCode).toBe(400);
     expect(response.body).toMatchObject({
@@ -79,6 +87,7 @@ describe('Notes API', () => {
 
     const response = await request(app)
       .get('/notes')
+      .set('Authorization', `Bearer ${accessToken}`)
       .query({ title: 'belajar' });
 
     expect(response.statusCode).toBe(200);
@@ -101,7 +110,9 @@ describe('Notes API', () => {
       title: 'Catatan detail',
     });
 
-    const response = await request(app).get('/notes/note-detail');
+    const response = await request(app)
+      .get('/notes/note-detail')
+      .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toMatchObject({
@@ -120,7 +131,9 @@ describe('Notes API', () => {
   });
 
   it('should return 404 for missing note detail', async () => {
-    const response = await request(app).get('/notes/note-404');
+    const response = await request(app)
+      .get('/notes/note-404')
+      .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.statusCode).toBe(404);
     expect(response.body).toEqual({
@@ -139,6 +152,7 @@ describe('Notes API', () => {
 
     const response = await request(app)
       .put('/notes/note-update')
+      .set('Authorization', `Bearer ${accessToken}`)
       .send({
         title: 'Judul baru',
         body: 'Isi baru',
@@ -165,7 +179,9 @@ describe('Notes API', () => {
       title: 'Akan dihapus',
     });
 
-    const response = await request(app).delete('/notes/note-delete');
+    const response = await request(app)
+      .delete('/notes/note-delete')
+      .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
@@ -173,6 +189,18 @@ describe('Notes API', () => {
       data: 'note-delete',
       message: 'Catatan berhasil dihapus',
       status: 'success',
+    });
+  });
+
+  it('should reject unauthorized request when access token is missing', async () => {
+    const response = await request(app).get('/notes');
+
+    expect(response.statusCode).toBe(401);
+    expect(response.body).toEqual({
+      code: 401,
+      data: null,
+      message: 'Token tidak ditemukan',
+      status: 'failed',
     });
   });
 });
