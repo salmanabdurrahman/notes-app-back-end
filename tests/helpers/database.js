@@ -91,6 +91,10 @@ export async function clearNotesTable() {
   await getPool().query('TRUNCATE TABLE notes');
 }
 
+export async function clearUsersTable() {
+  await getPool().query('TRUNCATE TABLE users');
+}
+
 export async function seedNote({
   id = 'note-seed',
   title = 'Catatan seed',
@@ -104,6 +108,24 @@ export async function seedNote({
       RETURNING id, title, body, tags, created_at, updated_at
     `,
     values: [id, title, body, tags],
+  });
+
+  return result.rows[0];
+}
+
+export async function seedUser({
+  id = 'user-seed',
+  username = 'userseed',
+  fullname = 'Pengguna Seed',
+  password = 'password-seed',
+} = {}) {
+  const result = await getPool().query({
+    text: `
+      INSERT INTO users (id, username, fullname, password)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, username, fullname, created_at, updated_at
+    `,
+    values: [id, username, fullname, password],
   });
 
   return result.rows[0];

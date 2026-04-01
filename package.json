@@ -10,7 +10,8 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/unit",
     "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/integration",
-    "test:api": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/api"
+    "test:api": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand tests/api",
+    "db:reset": "node-pg-migrate down 999999999 && node-pg-migrate up"
   },
   "type": "module",
   "keywords": [],
@@ -27,6 +28,7 @@
     "supertest": "^7.2.2"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
