@@ -1,14 +1,14 @@
 import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
-import { NotFoundError } from '../../../exceptions/index.js';
-import { getDatabaseUrl } from '../../../config/database.js';
+import { NotFoundError } from '../../core/errors/index.js';
+import { getDatabaseUrl } from '../../config/database.js';
 
 class NoteRepository {
   constructor(pool = new Pool({ connectionString: getDatabaseUrl() })) {
     this.pool = pool;
   }
 
-  async getNotes() {
+  async findAll() {
     const query = {
       text: `
         SELECT id, title, body, tags, created_at, updated_at
@@ -21,7 +21,7 @@ class NoteRepository {
     return result.rows;
   }
 
-  async getNoteById(id) {
+  async findById(id) {
     const query = {
       text: `
         SELECT id, title, body, tags, created_at, updated_at
@@ -39,7 +39,7 @@ class NoteRepository {
     return result.rows[0];
   }
 
-  async createNote({ title, body, tags }) {
+  async create({ title, body, tags }) {
     const id = nanoid(16);
 
     const query = {
@@ -55,7 +55,7 @@ class NoteRepository {
     return result.rows[0];
   }
 
-  async editNote({ id, title, body, tags }) {
+  async updateById({ id, title, body, tags }) {
     const query = {
       text: `
         UPDATE notes
@@ -77,7 +77,7 @@ class NoteRepository {
     return result.rows[0];
   }
 
-  async deleteNote(id) {
+  async deleteById(id) {
     const query = {
       text: `
         DELETE FROM notes

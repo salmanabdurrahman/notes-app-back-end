@@ -1,4 +1,4 @@
-function response(res, statusCode, message, data) {
+function sendResponse(res, statusCode, message, data) {
   return res
     .status(statusCode)
     .json({
@@ -10,4 +10,4 @@ function response(res, statusCode, message, data) {
     .end();
 }
 
-export default response;
+export default sendResponse;

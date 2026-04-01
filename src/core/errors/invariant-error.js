@@ -1,6 +1,6 @@
-import ClientError from '../exceptions/client-error.js';
+import AppError from './app-error.js';
 
-class InvariantError extends ClientError {
+class InvariantError extends AppError {
   constructor(message) {
     super(message);
     this.name = 'InvariantError';

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundError } from '../../../src/exceptions/index.js';
-import noteRepository from '../../../src/services/notes/repositories/note-repositories.js';
+import { NotFoundError } from '../../../src/core/errors/index.js';
+import noteRepository from '../../../src/modules/notes/notes.repository.js';
 import {
   createNote,
   deleteNoteById,
-  editNoteById,
   getAllNotes,
   getNoteById,
-} from '../../../src/services/notes/controller/note-controller.js';
+  updateNoteById,
+} from '../../../src/modules/notes/notes.controller.js';
 
 function createResponseMock() {
   return {
@@ -29,11 +29,11 @@ describe('note-controller', () => {
       { id: 'note-1', title: 'Belajar Node' },
       { id: 'note-2', title: 'Belajar Express' },
     ];
-    jest.spyOn(noteRepository, 'getNotes').mockResolvedValue(notes);
+    jest.spyOn(noteRepository, 'findAll').mockResolvedValue(notes);
 
     await getAllNotes({ query: {} }, res);
 
-    expect(noteRepository.getNotes).toHaveBeenCalledTimes(1);
+    expect(noteRepository.findAll).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       code: 200,
@@ -44,7 +44,7 @@ describe('note-controller', () => {
   });
 
   it('should filter notes by title case-insensitively', async () => {
-    jest.spyOn(noteRepository, 'getNotes').mockResolvedValue([
+    jest.spyOn(noteRepository, 'findAll').mockResolvedValue([
       { id: 'note-1', title: 'Belajar Node' },
       { id: 'note-2', title: 'Resep Masak' },
       { id: 'note-3', title: 'BELAJAR Express' },
@@ -67,11 +67,11 @@ describe('note-controller', () => {
 
   it('should return one note by id', async () => {
     const note = { id: 'note-1', title: 'Belajar Node' };
-    jest.spyOn(noteRepository, 'getNoteById').mockResolvedValue(note);
+    jest.spyOn(noteRepository, 'findById').mockResolvedValue(note);
 
     await getNoteById({ params: { id: 'note-1' } }, res);
 
-    expect(noteRepository.getNoteById).toHaveBeenCalledWith('note-1');
+    expect(noteRepository.findById).toHaveBeenCalledWith('note-1');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       code: 200,
@@ -83,7 +83,7 @@ describe('note-controller', () => {
 
   it('should propagate repository error when note id is not found', async () => {
     jest
-      .spyOn(noteRepository, 'getNoteById')
+      .spyOn(noteRepository, 'findById')
       .mockRejectedValue(
         new NotFoundError('Gagal mengambil catatan. Id tidak ditemukan')
       );
@@ -94,9 +94,7 @@ describe('note-controller', () => {
   });
 
   it('should create a note and return note id', async () => {
-    jest
-      .spyOn(noteRepository, 'createNote')
-      .mockResolvedValue({ id: 'note-1' });
+    jest.spyOn(noteRepository, 'create').mockResolvedValue({ id: 'note-1' });
 
     await createNote(
       {
@@ -109,7 +107,7 @@ describe('note-controller', () => {
       res
     );
 
-    expect(noteRepository.createNote).toHaveBeenCalledWith({
+    expect(noteRepository.create).toHaveBeenCalledWith({
       body: 'Isi catatan',
       tags: ['test'],
       title: 'Catatan baru',
@@ -125,9 +123,9 @@ describe('note-controller', () => {
 
   it('should update a note by id', async () => {
     const note = { id: 'note-1', title: 'Catatan update' };
-    jest.spyOn(noteRepository, 'editNote').mockResolvedValue(note);
+    jest.spyOn(noteRepository, 'updateById').mockResolvedValue(note);
 
-    await editNoteById(
+    await updateNoteById(
       {
         params: { id: 'note-1' },
         validated: {
@@ -139,7 +137,7 @@ describe('note-controller', () => {
       res
     );
 
-    expect(noteRepository.editNote).toHaveBeenCalledWith({
+    expect(noteRepository.updateById).toHaveBeenCalledWith({
       body: 'Isi update',
       id: 'note-1',
       tags: ['updated'],
@@ -155,11 +153,11 @@ describe('note-controller', () => {
   });
 
   it('should delete a note by id', async () => {
-    jest.spyOn(noteRepository, 'deleteNote').mockResolvedValue('note-1');
+    jest.spyOn(noteRepository, 'deleteById').mockResolvedValue('note-1');
 
     await deleteNoteById({ params: { id: 'note-1' } }, res);
 
-    expect(noteRepository.deleteNote).toHaveBeenCalledWith('note-1');
+    expect(noteRepository.deleteById).toHaveBeenCalledWith('note-1');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       code: 200,

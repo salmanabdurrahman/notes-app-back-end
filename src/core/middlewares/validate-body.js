@@ -1,5 +1,7 @@
-function validate(schema) {
+function validateBody(schema) {
   return function (req, res, next) {
+    void res;
+
     const { error, value } = schema.validate(req.body, {
       abortEarly: false,
       allowUnknown: false,
@@ -11,9 +13,8 @@ function validate(schema) {
     }
 
     req.validated = value;
-    req.validate = value;
     return next();
   };
 }
 
-export default validate;
+export default validateBody;

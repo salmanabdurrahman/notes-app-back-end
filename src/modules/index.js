@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import notes from '../services/notes/routes/index.js';
+import notesRouter from './notes/notes.route.js';
 
 const router = Router();
 
-router.use('/', notes);
+router.use('/', notesRouter);
 
 export default router;

@@ -7,8 +7,8 @@ import {
   it,
 } from '@jest/globals';
 import request from 'supertest';
-import app from '../../src/server/index.js';
-import noteRepository from '../../src/services/notes/repositories/note-repositories.js';
+import app from '../../src/app.js';
+import noteRepository from '../../src/modules/notes/notes.repository.js';
 import {
   clearNotesTable,
   closeTestDatabase,

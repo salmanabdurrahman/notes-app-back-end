@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundError } from '../../../src/exceptions/index.js';
-import { NoteRepository } from '../../../src/services/notes/repositories/note-repositories.js';
+import { NotFoundError } from '../../../src/core/errors/index.js';
+import { NoteRepository } from '../../../src/modules/notes/notes.repository.js';
 
 describe('NoteRepository', () => {
   let mockPool;
@@ -19,7 +19,7 @@ describe('NoteRepository', () => {
     const rows = [{ id: 'note-1', title: 'Catatan 1' }];
     mockPool.query.mockResolvedValue({ rows });
 
-    const notes = await repository.getNotes();
+    const notes = await repository.findAll();
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -33,7 +33,7 @@ describe('NoteRepository', () => {
     const row = { id: 'note-1', title: 'Catatan 1' };
     mockPool.query.mockResolvedValue({ rows: [row] });
 
-    const note = await repository.getNoteById('note-1');
+    const note = await repository.findById('note-1');
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -46,7 +46,7 @@ describe('NoteRepository', () => {
   it('should throw NotFoundError when note is not found by id', async () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
-    await expect(repository.getNoteById('missing-note')).rejects.toBeInstanceOf(
+    await expect(repository.findById('missing-note')).rejects.toBeInstanceOf(
       NotFoundError
     );
   });
@@ -55,7 +55,7 @@ describe('NoteRepository', () => {
     const row = { id: 'generated-id', title: 'Catatan baru' };
     mockPool.query.mockResolvedValue({ rows: [row] });
 
-    const note = await repository.createNote({
+    const note = await repository.create({
       title: 'Catatan baru',
       body: 'Isi catatan',
       tags: ['baru'],
@@ -74,7 +74,7 @@ describe('NoteRepository', () => {
     const row = { id: 'note-1', title: 'Judul update' };
     mockPool.query.mockResolvedValue({ rows: [row] });
 
-    const note = await repository.editNote({
+    const note = await repository.updateById({
       id: 'note-1',
       title: 'Judul update',
       body: 'Isi update',
@@ -94,7 +94,7 @@ describe('NoteRepository', () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
     await expect(
-      repository.editNote({
+      repository.updateById({
         id: 'note-404',
         title: 'Judul',
         body: 'Isi',
@@ -106,7 +106,7 @@ describe('NoteRepository', () => {
   it('should delete a note and return its id', async () => {
     mockPool.query.mockResolvedValue({ rows: [{ id: 'note-1' }] });
 
-    const noteId = await repository.deleteNote('note-1');
+    const noteId = await repository.deleteById('note-1');
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({

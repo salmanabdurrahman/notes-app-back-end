@@ -1,5 +1,7 @@
 function validateQuery(schema) {
   return function (req, res, next) {
+    void res;
+
     const { error, value } = schema.validate(req.query, {
       abortEarly: false,
       allowUnknown: false,
@@ -11,7 +13,6 @@ function validateQuery(schema) {
     }
 
     req.validated = value;
-    req.validate = value;
     return next();
   };
 }

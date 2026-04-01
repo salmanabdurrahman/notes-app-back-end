@@ -8,8 +8,8 @@ import {
 } from '@jest/globals';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../../src/config/database.js';
-import { NotFoundError } from '../../../src/exceptions/index.js';
-import { NoteRepository } from '../../../src/services/notes/repositories/note-repositories.js';
+import { NotFoundError } from '../../../src/core/errors/index.js';
+import { NoteRepository } from '../../../src/modules/notes/notes.repository.js';
 import {
   clearNotesTable,
   closeTestDatabase,
@@ -40,13 +40,13 @@ describe('NoteRepository integration', () => {
   });
 
   it('should create and retrieve a note from postgres', async () => {
-    const created = await repository.createNote({
+    const created = await repository.create({
       title: 'Catatan integrasi',
       body: 'Isi integrasi',
       tags: ['integration'],
     });
 
-    const note = await repository.getNoteById(created.id);
+    const note = await repository.findById(created.id);
 
     expect(note).toMatchObject({
       body: 'Isi integrasi',
@@ -64,7 +64,7 @@ describe('NoteRepository integration', () => {
       title: 'Judul awal',
     });
 
-    const updated = await repository.editNote({
+    const updated = await repository.updateById({
       id: seeded.id,
       title: 'Judul baru',
       body: 'Isi baru',
@@ -78,7 +78,7 @@ describe('NoteRepository integration', () => {
       title: 'Judul baru',
     });
 
-    await expect(repository.getNoteById(seeded.id)).resolves.toMatchObject({
+    await expect(repository.findById(seeded.id)).resolves.toMatchObject({
       body: 'Isi baru',
       id: seeded.id,
       tags: ['baru'],
@@ -92,10 +92,10 @@ describe('NoteRepository integration', () => {
       title: 'Akan dihapus',
     });
 
-    const deletedId = await repository.deleteNote('note-delete');
+    const deletedId = await repository.deleteById('note-delete');
 
     expect(deletedId).toBe('note-delete');
-    await expect(repository.getNoteById('note-delete')).rejects.toBeInstanceOf(
+    await expect(repository.findById('note-delete')).rejects.toBeInstanceOf(
       NotFoundError
     );
   });
