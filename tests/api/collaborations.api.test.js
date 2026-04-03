@@ -10,6 +10,7 @@ import request from 'supertest';
 import app from '../../src/app.js';
 import collaborationRepository from '../../src/modules/collaborations/collaborations.repository.js';
 import noteRepository from '../../src/modules/notes/notes.repository.js';
+import userRepository from '../../src/modules/users/users.repository.js';
 import tokenManager from '../../src/shared/utils/token-manager.js';
 import {
   clearCollaborationsTable,
@@ -65,6 +66,7 @@ describe('Collaborations API', () => {
   afterAll(async () => {
     await noteRepository.close();
     await collaborationRepository.close();
+    await userRepository.close();
     await closeTestDatabase();
   });
 
