@@ -1,6 +1,5 @@
 import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
-import { NotFoundError } from '../../core/errors/index.js';
 import { getDatabaseUrl } from '../../config/database.js';
 
 class NoteRepository {
@@ -8,13 +7,15 @@ class NoteRepository {
     this.pool = pool;
   }
 
-  async findAll() {
+  async findAll(owner) {
     const query = {
       text: `
-        SELECT id, title, body, tags, created_at, updated_at
+        SELECT id, title, body, tags, owner, created_at, updated_at
         FROM notes
+        WHERE owner = $1
         ORDER BY created_at DESC
       `,
+      values: [owner],
     };
 
     const result = await this.pool.query(query);
@@ -32,23 +33,19 @@ class NoteRepository {
     };
 
     const result = await this.pool.query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal mengambil catatan. Id tidak ditemukan');
-    }
-
-    return result.rows[0];
+    return result.rows[0] ?? null;
   }
 
-  async create({ title, body, tags }) {
+  async create({ title, body, tags, owner }) {
     const id = nanoid(16);
 
     const query = {
       text: `
-        INSERT INTO notes (id, title, body, tags)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, title, body, tags, created_at, updated_at
+        INSERT INTO notes (id, title, body, tags, owner)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, title, body, tags, owner, created_at, updated_at
       `,
-      values: [id, title, body, tags],
+      values: [id, title, body, tags, owner],
     };
 
     const result = await this.pool.query(query);
@@ -70,11 +67,7 @@ class NoteRepository {
     };
 
     const result = await this.pool.query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal memperbarui catatan. Id tidak ditemukan');
-    }
-
-    return result.rows[0];
+    return result.rows[0] ?? null;
   }
 
   async deleteById(id) {
@@ -88,11 +81,21 @@ class NoteRepository {
     };
 
     const result = await this.pool.query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal menghapus catatan. Id tidak ditemukan');
-    }
+    return result.rows[0]?.id ?? null;
+  }
 
-    return result.rows[0].id;
+  async verifyNoteOwner(id, owner) {
+    const query = {
+      text: `
+        SELECT id
+        FROM notes
+        WHERE id = $1 AND owner = $2
+      `,
+      values: [id, owner],
+    };
+
+    const result = await this.pool.query(query);
+    return result.rows.length > 0;
   }
 
   async close() {

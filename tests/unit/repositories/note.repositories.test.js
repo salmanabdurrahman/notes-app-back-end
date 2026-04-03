@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundError } from '../../../src/core/errors/index.js';
 import { NoteRepository } from '../../../src/modules/notes/notes.repository.js';
 
 describe('NoteRepository', () => {
@@ -19,11 +18,12 @@ describe('NoteRepository', () => {
     const rows = [{ id: 'note-1', title: 'Catatan 1' }];
     mockPool.query.mockResolvedValue({ rows });
 
-    const notes = await repository.findAll();
+    const notes = await repository.findAll('user-1');
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
         text: expect.stringContaining('ORDER BY created_at DESC'),
+        values: ['user-1'],
       })
     );
     expect(notes).toEqual(rows);
@@ -43,12 +43,10 @@ describe('NoteRepository', () => {
     expect(note).toEqual(row);
   });
 
-  it('should throw NotFoundError when note is not found by id', async () => {
+  it('should return null when note is not found by id', async () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
-    await expect(repository.findById('missing-note')).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(repository.findById('missing-note')).resolves.toBeNull();
   });
 
   it('should create a note and return inserted row', async () => {
@@ -59,12 +57,19 @@ describe('NoteRepository', () => {
       title: 'Catatan baru',
       body: 'Isi catatan',
       tags: ['baru'],
+      owner: 'user-1',
     });
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
         text: expect.stringContaining('INSERT INTO notes'),
-        values: [expect.any(String), 'Catatan baru', 'Isi catatan', ['baru']],
+        values: [
+          expect.any(String),
+          'Catatan baru',
+          'Isi catatan',
+          ['baru'],
+          'user-1',
+        ],
       })
     );
     expect(note).toEqual(row);
@@ -90,17 +95,45 @@ describe('NoteRepository', () => {
     expect(note).toEqual(row);
   });
 
-  it('should throw NotFoundError when updated note does not exist', async () => {
+  it('should return null when updated note does not exist', async () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
-    await expect(
-      repository.updateById({
-        id: 'note-404',
-        title: 'Judul',
-        body: 'Isi',
-        tags: ['tag'],
+    const note = await repository.updateById({
+      id: 'note-404',
+      title: 'Judul',
+      body: 'Isi',
+      tags: ['tag'],
+    });
+
+    expect(note).toBeNull();
+  });
+
+  it('should return null when deleted note does not exist', async () => {
+    mockPool.query.mockResolvedValue({ rows: [] });
+
+    const noteId = await repository.deleteById('note-404');
+    expect(noteId).toBeNull();
+  });
+
+  it('should return true when owner verification is valid', async () => {
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'note-1' }] });
+
+    const isOwner = await repository.verifyNoteOwner('note-1', 'user-1');
+
+    expect(mockPool.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: ['note-1', 'user-1'],
       })
-    ).rejects.toBeInstanceOf(NotFoundError);
+    );
+    expect(isOwner).toBe(true);
+  });
+
+  it('should return false when owner verification is invalid', async () => {
+    mockPool.query.mockResolvedValue({ rows: [] });
+
+    const isOwner = await repository.verifyNoteOwner('note-1', 'user-2');
+
+    expect(isOwner).toBe(false);
   });
 
   it('should delete a note and return its id', async () => {

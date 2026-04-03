@@ -104,14 +104,15 @@ export async function seedNote({
   title = 'Catatan seed',
   body = 'Isi catatan seed',
   tags = ['seed'],
+  owner = 'user-seed-note',
 } = {}) {
   const result = await getPool().query({
     text: `
-      INSERT INTO notes (id, title, body, tags)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, title, body, tags, created_at, updated_at
+      INSERT INTO notes (id, title, body, tags, owner)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, title, body, tags, owner, created_at, updated_at
     `,
-    values: [id, title, body, tags],
+    values: [id, title, body, tags, owner],
   });
 
   return result.rows[0];

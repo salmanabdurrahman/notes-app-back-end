@@ -19,6 +19,7 @@ import {
 
 describe('Notes API', () => {
   let accessToken;
+  let anotherAccessToken;
 
   beforeAll(async () => {
     await setupTestDatabase();
@@ -27,6 +28,9 @@ describe('Notes API', () => {
   beforeEach(async () => {
     await clearNotesTable();
     accessToken = tokenManager.generateAccessToken({ id: 'user-notes-api' });
+    anotherAccessToken = tokenManager.generateAccessToken({
+      id: 'user-another-notes-api',
+    });
   });
 
   afterAll(async () => {
@@ -74,14 +78,17 @@ describe('Notes API', () => {
   it('should return filtered notes via GET /notes?title=', async () => {
     await seedNote({
       id: 'note-1',
+      owner: 'user-notes-api',
       title: 'Belajar Node',
     });
     await seedNote({
       id: 'note-2',
+      owner: 'user-notes-api',
       title: 'Belajar Express',
     });
     await seedNote({
       id: 'note-3',
+      owner: 'user-notes-api',
       title: 'Resep Masak',
     });
 
@@ -106,6 +113,7 @@ describe('Notes API', () => {
     await seedNote({
       body: 'Isi detail',
       id: 'note-detail',
+      owner: 'user-notes-api',
       tags: ['detail'],
       title: 'Catatan detail',
     });
@@ -139,7 +147,7 @@ describe('Notes API', () => {
     expect(response.body).toEqual({
       code: 404,
       data: null,
-      message: 'Gagal mengambil catatan. Id tidak ditemukan',
+      message: 'Catatan tidak ditemukan',
       status: 'failed',
     });
   });
@@ -147,6 +155,7 @@ describe('Notes API', () => {
   it('should update note via PUT /notes/:id', async () => {
     await seedNote({
       id: 'note-update',
+      owner: 'user-notes-api',
       title: 'Judul awal',
     });
 
@@ -176,6 +185,7 @@ describe('Notes API', () => {
   it('should delete note via DELETE /notes/:id', async () => {
     await seedNote({
       id: 'note-delete',
+      owner: 'user-notes-api',
       title: 'Akan dihapus',
     });
 
@@ -200,6 +210,71 @@ describe('Notes API', () => {
       code: 401,
       data: null,
       message: 'Token tidak ditemukan',
+      status: 'failed',
+    });
+  });
+
+  it('should return 404 when user accesses note owned by another user', async () => {
+    await seedNote({
+      id: 'note-owned-by-another-user',
+      owner: 'user-notes-api',
+      title: 'Private note',
+    });
+
+    const response = await request(app)
+      .get('/notes/note-owned-by-another-user')
+      .set('Authorization', `Bearer ${anotherAccessToken}`);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toEqual({
+      code: 404,
+      data: null,
+      message: 'Catatan tidak ditemukan',
+      status: 'failed',
+    });
+  });
+
+  it('should return 404 when user updates note owned by another user', async () => {
+    await seedNote({
+      id: 'note-update-owned-by-another-user',
+      owner: 'user-notes-api',
+      title: 'Private update note',
+    });
+
+    const response = await request(app)
+      .put('/notes/note-update-owned-by-another-user')
+      .set('Authorization', `Bearer ${anotherAccessToken}`)
+      .send({
+        title: 'Updated title',
+        body: 'Updated body',
+        tags: ['updated'],
+      });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toEqual({
+      code: 404,
+      data: null,
+      message: 'Gagal memperbarui catatan. Id tidak ditemukan',
+      status: 'failed',
+    });
+  });
+
+  it('should return 404 when user deletes note owned by another user', async () => {
+    await seedNote({
+      id: 'note-delete-owned-by-another-user',
+      owner: 'user-notes-api',
+      title: 'Private delete note',
+    });
+
+    const response = await request(app)
+      .delete('/notes/note-delete-owned-by-another-user')
+      .set('Authorization', `Bearer ${anotherAccessToken}`);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toEqual({
+      code: 404,
+      data: null,
+      message: 'Gagal menghapus catatan. Id tidak ditemukan',
       status: 'failed',
     });
   });
