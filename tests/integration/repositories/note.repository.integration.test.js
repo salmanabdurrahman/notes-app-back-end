@@ -10,9 +10,13 @@ import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../../src/config/database.js';
 import { NoteRepository } from '../../../src/modules/notes/notes.repository.js';
 import {
+  clearCollaborationsTable,
   clearNotesTable,
+  clearUsersTable,
   closeTestDatabase,
+  seedCollaboration,
   seedNote,
+  seedUser,
   setupTestDatabase,
 } from '../../helpers/database.js';
 
@@ -27,7 +31,9 @@ describe('NoteRepository integration', () => {
   });
 
   beforeEach(async () => {
+    await clearCollaborationsTable();
     await clearNotesTable();
+    await clearUsersTable();
   });
 
   afterAll(async () => {
@@ -39,6 +45,13 @@ describe('NoteRepository integration', () => {
   });
 
   it('should create and retrieve a note from postgres', async () => {
+    await seedUser({
+      id: 'user-integration',
+      username: 'userintegration',
+      fullname: 'User Integration',
+      password: 'hashed-password',
+    });
+
     const created = await repository.create({
       title: 'Catatan integrasi',
       body: 'Isi integrasi',
@@ -57,6 +70,19 @@ describe('NoteRepository integration', () => {
   });
 
   it('should return only notes owned by the requested owner', async () => {
+    await seedUser({
+      id: 'user-a',
+      username: 'usera',
+      fullname: 'User A',
+      password: 'hashed-password',
+    });
+    await seedUser({
+      id: 'user-b',
+      username: 'userb',
+      fullname: 'User B',
+      password: 'hashed-password',
+    });
+
     await seedNote({
       id: 'note-owner-a',
       owner: 'user-a',
@@ -78,7 +104,48 @@ describe('NoteRepository integration', () => {
     });
   });
 
+  it('should include shared notes for collaborator in findAll', async () => {
+    await seedUser({
+      id: 'user-owner',
+      username: 'userowner',
+      fullname: 'User Owner',
+      password: 'hashed-password',
+    });
+    await seedUser({
+      id: 'user-collaborator',
+      username: 'usercollaborator',
+      fullname: 'User Collaborator',
+      password: 'hashed-password',
+    });
+    await seedNote({
+      id: 'note-shared',
+      owner: 'user-owner',
+      title: 'Catatan Shared',
+    });
+    await seedCollaboration({
+      id: 'collab-shared',
+      noteId: 'note-shared',
+      userId: 'user-collaborator',
+    });
+
+    const notes = await repository.findAll('user-collaborator');
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatchObject({
+      id: 'note-shared',
+      owner: 'user-owner',
+      title: 'Catatan Shared',
+    });
+  });
+
   it('should update persisted note data', async () => {
+    await seedUser({
+      id: 'user-update',
+      username: 'userupdate',
+      fullname: 'User Update',
+      password: 'hashed-password',
+    });
+
     const seeded = await seedNote({
       body: 'Isi awal',
       id: 'note-update',
@@ -110,6 +177,13 @@ describe('NoteRepository integration', () => {
   });
 
   it('should delete persisted note data', async () => {
+    await seedUser({
+      id: 'user-delete',
+      username: 'userdelete',
+      fullname: 'User Delete',
+      password: 'hashed-password',
+    });
+
     await seedNote({
       id: 'note-delete',
       owner: 'user-delete',
@@ -139,6 +213,13 @@ describe('NoteRepository integration', () => {
   });
 
   it('should verify note owner correctly', async () => {
+    await seedUser({
+      id: 'user-owner',
+      username: 'userowner',
+      fullname: 'User Owner',
+      password: 'hashed-password',
+    });
+
     await seedNote({
       id: 'note-owner-check',
       owner: 'user-owner',
@@ -150,6 +231,38 @@ describe('NoteRepository integration', () => {
     ).resolves.toBe(true);
     await expect(
       repository.verifyNoteOwner('note-owner-check', 'user-other')
+    ).resolves.toBe(false);
+  });
+
+  it('should verify note access using collaboration relation', async () => {
+    await seedUser({
+      id: 'user-owner',
+      username: 'userowner',
+      fullname: 'User Owner',
+      password: 'hashed-password',
+    });
+    await seedUser({
+      id: 'user-collaborator',
+      username: 'usercollaborator',
+      fullname: 'User Collaborator',
+      password: 'hashed-password',
+    });
+    await seedNote({
+      id: 'note-access-check',
+      owner: 'user-owner',
+      title: 'Access check',
+    });
+    await seedCollaboration({
+      id: 'collab-access',
+      noteId: 'note-access-check',
+      userId: 'user-collaborator',
+    });
+
+    await expect(
+      repository.verifyNoteAccess('note-access-check', 'user-collaborator')
+    ).resolves.toBe(true);
+    await expect(
+      repository.verifyNoteAccess('note-access-check', 'user-other')
     ).resolves.toBe(false);
   });
 });

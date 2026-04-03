@@ -24,8 +24,8 @@ export async function getNoteById(req, res) {
   const { id } = req.params;
   const { id: owner } = req.user;
 
-  const isOwner = await noteRepository.verifyNoteOwner(id, owner);
-  if (!isOwner) {
+  const isAccessible = await noteRepository.verifyNoteAccess(id, owner);
+  if (!isAccessible) {
     throw new NotFoundError('Catatan tidak ditemukan');
   }
 
@@ -56,7 +56,7 @@ export async function updateNoteById(req, res) {
   const { title, tags, body } = req.validated ?? req.body;
   const { id: owner } = req.user;
 
-  const isOwner = await noteRepository.verifyNoteOwner(id, owner);
+  const isOwner = await noteRepository.verifyNoteAccess(id, owner);
   if (!isOwner) {
     throw new NotFoundError('Gagal memperbarui catatan. Id tidak ditemukan');
   }
@@ -78,7 +78,7 @@ export async function deleteNoteById(req, res) {
   const { id } = req.params;
   const { id: owner } = req.user;
 
-  const isOwner = await noteRepository.verifyNoteOwner(id, owner);
+  const isOwner = await noteRepository.verifyNoteAccess(id, owner);
   if (!isOwner) {
     throw new NotFoundError('Gagal menghapus catatan. Id tidak ditemukan');
   }

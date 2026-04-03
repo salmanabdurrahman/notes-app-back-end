@@ -10,10 +10,27 @@ export const shorthands = undefined;
  */
 export const up = (pgm) => {
   pgm.sql(
-    "INSERT INTO users(id, username, password, fullname, created_at, updated_at) VALUES ('old_notes', 'old_notes', 'old_notes', 'old notes', NOW(), NOW())"
+    "INSERT INTO users(id, username, password, fullname, created_at, updated_at) VALUES ('old_notes', 'migrated_9f85ebf8f8f6487d', 'old_notes', 'old notes', NOW(), NOW()) ON CONFLICT (id) DO NOTHING"
   );
 
   pgm.sql("UPDATE notes SET owner = 'old_notes' WHERE owner IS NULL");
+
+  pgm.sql(`
+    INSERT INTO users(id, username, password, fullname, created_at, updated_at)
+    SELECT n.owner,
+           CONCAT('migrated_', SUBSTRING(MD5(n.owner) FROM 1 FOR 16)),
+           'old_notes',
+           'migrated user',
+           NOW(),
+           NOW()
+    FROM (
+      SELECT DISTINCT owner
+      FROM notes
+      WHERE owner IS NOT NULL
+    ) n
+    LEFT JOIN users u ON u.id = n.owner
+    WHERE u.id IS NULL
+  `);
 
   pgm.addConstraint(
     'notes',

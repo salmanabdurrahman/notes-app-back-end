@@ -1,24 +1,44 @@
 import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../config/database.js';
+import collaborationRepository from '../collaborations/collaborations.repository.js';
 
 class NoteRepository {
-  constructor(pool = new Pool({ connectionString: getDatabaseUrl() })) {
+  constructor(pool = null, collaborationRepo = collaborationRepository) {
     this.pool = pool;
+    this.isExternalPool = Boolean(pool);
+    this.collaborationRepository = collaborationRepo;
+  }
+
+  getPool() {
+    if (!this.pool) {
+      this.pool = new Pool({ connectionString: getDatabaseUrl() });
+    }
+
+    return this.pool;
   }
 
   async findAll(owner) {
     const query = {
       text: `
-        SELECT id, title, body, tags, owner, created_at, updated_at
+        SELECT DISTINCT notes.id AS id,
+            notes.title,
+            notes.body,
+            notes.tags,
+            notes.owner,
+            notes.created_at,
+            notes.updated_at
         FROM notes
-        WHERE owner = $1
-        ORDER BY created_at DESC
+        LEFT JOIN collaborations 
+          ON collaborations.note_id = notes.id
+        WHERE notes.owner = $1 
+          OR collaborations.user_id = $1
+        ORDER BY notes.created_at DESC;
       `,
       values: [owner],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows;
   }
 
@@ -32,7 +52,7 @@ class NoteRepository {
       values: [id],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows[0] ?? null;
   }
 
@@ -48,7 +68,7 @@ class NoteRepository {
       values: [id, title, body, tags, owner],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows[0];
   }
 
@@ -66,7 +86,7 @@ class NoteRepository {
       values: [title, body, tags, id],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows[0] ?? null;
   }
 
@@ -80,7 +100,7 @@ class NoteRepository {
       values: [id],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows[0]?.id ?? null;
   }
 
@@ -94,12 +114,32 @@ class NoteRepository {
       values: [id, owner],
     };
 
-    const result = await this.pool.query(query);
+    const result = await this.getPool().query(query);
     return result.rows.length > 0;
   }
 
+  async verifyNoteAccess(noteId, userId) {
+    const ownerResult = await this.verifyNoteOwner(noteId, userId);
+    if (ownerResult) {
+      return ownerResult;
+    }
+
+    const result = await this.collaborationRepository.verifyCollaborator({
+      noteId,
+      userId,
+    });
+    return result;
+  }
+
   async close() {
+    if (!this.pool) {
+      return;
+    }
+
     await this.pool.end();
+    if (!this.isExternalPool) {
+      this.pool = null;
+    }
   }
 }
 

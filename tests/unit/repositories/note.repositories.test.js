@@ -3,6 +3,7 @@ import { NoteRepository } from '../../../src/modules/notes/notes.repository.js';
 
 describe('NoteRepository', () => {
   let mockPool;
+  let mockCollaborationRepository;
   let repository;
 
   beforeEach(() => {
@@ -11,7 +12,11 @@ describe('NoteRepository', () => {
       query: jest.fn(),
     };
 
-    repository = new NoteRepository(mockPool);
+    mockCollaborationRepository = {
+      verifyCollaborator: jest.fn(),
+    };
+
+    repository = new NoteRepository(mockPool, mockCollaborationRepository);
   });
 
   it('should return all notes ordered by newest first', async () => {
@@ -22,7 +27,7 @@ describe('NoteRepository', () => {
 
     expect(mockPool.query).toHaveBeenCalledWith(
       expect.objectContaining({
-        text: expect.stringContaining('ORDER BY created_at DESC'),
+        text: expect.stringContaining('ORDER BY notes.created_at DESC'),
         values: ['user-1'],
       })
     );
@@ -134,6 +139,41 @@ describe('NoteRepository', () => {
     const isOwner = await repository.verifyNoteOwner('note-1', 'user-2');
 
     expect(isOwner).toBe(false);
+  });
+
+  it('should return true from verifyNoteAccess when user is note owner', async () => {
+    mockPool.query.mockResolvedValue({ rows: [{ id: 'note-1' }] });
+
+    const hasAccess = await repository.verifyNoteAccess('note-1', 'user-1');
+
+    expect(hasAccess).toBe(true);
+    expect(
+      mockCollaborationRepository.verifyCollaborator
+    ).not.toHaveBeenCalled();
+  });
+
+  it('should return true from verifyNoteAccess when user is collaborator', async () => {
+    mockPool.query.mockResolvedValue({ rows: [] });
+    mockCollaborationRepository.verifyCollaborator.mockResolvedValue(true);
+
+    const hasAccess = await repository.verifyNoteAccess('note-1', 'user-2');
+
+    expect(mockCollaborationRepository.verifyCollaborator).toHaveBeenCalledWith(
+      {
+        noteId: 'note-1',
+        userId: 'user-2',
+      }
+    );
+    expect(hasAccess).toBe(true);
+  });
+
+  it('should return false from verifyNoteAccess when user has no access', async () => {
+    mockPool.query.mockResolvedValue({ rows: [] });
+    mockCollaborationRepository.verifyCollaborator.mockResolvedValue(false);
+
+    const hasAccess = await repository.verifyNoteAccess('note-1', 'user-3');
+
+    expect(hasAccess).toBe(false);
   });
 
   it('should delete a note and return its id', async () => {

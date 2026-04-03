@@ -88,15 +88,19 @@ export async function setupTestDatabase() {
 }
 
 export async function clearNotesTable() {
-  await getPool().query('TRUNCATE TABLE notes');
+  await getPool().query('TRUNCATE TABLE notes CASCADE');
 }
 
 export async function clearUsersTable() {
-  await getPool().query('TRUNCATE TABLE users');
+  await getPool().query('TRUNCATE TABLE users CASCADE');
 }
 
 export async function clearAuthenticationsTable() {
   await getPool().query('TRUNCATE TABLE authentications');
+}
+
+export async function clearCollaborationsTable() {
+  await getPool().query('TRUNCATE TABLE collaborations');
 }
 
 export async function seedNote({
@@ -147,6 +151,23 @@ export async function seedAuthentication({
       RETURNING id, token, created_at, updated_at
     `,
     values: [id, token],
+  });
+
+  return result.rows[0];
+}
+
+export async function seedCollaboration({
+  id = 'collab-seed',
+  noteId = 'note-seed',
+  userId = 'user-seed',
+} = {}) {
+  const result = await getPool().query({
+    text: `
+      INSERT INTO collaborations (id, note_id, user_id)
+      VALUES ($1, $2, $3)
+      RETURNING id, note_id, user_id, created_at, updated_at
+    `,
+    values: [id, noteId, userId],
   });
 
   return result.rows[0];

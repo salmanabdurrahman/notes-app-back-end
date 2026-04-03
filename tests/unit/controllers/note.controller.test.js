@@ -70,7 +70,7 @@ describe('note-controller', () => {
 
   it('should return one note by id', async () => {
     const note = { id: 'note-1', title: 'Belajar Node' };
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(true);
     jest.spyOn(noteRepository, 'findById').mockResolvedValue(note);
 
     await getNoteById(
@@ -78,7 +78,7 @@ describe('note-controller', () => {
       res
     );
 
-    expect(noteRepository.verifyNoteOwner).toHaveBeenCalledWith(
+    expect(noteRepository.verifyNoteAccess).toHaveBeenCalledWith(
       'note-1',
       'user-1'
     );
@@ -93,7 +93,7 @@ describe('note-controller', () => {
   });
 
   it('should throw not found when note id is not found', async () => {
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(true);
     jest.spyOn(noteRepository, 'findById').mockResolvedValue(null);
 
     await expect(
@@ -102,7 +102,7 @@ describe('note-controller', () => {
   });
 
   it('should throw not found when user does not own the note detail', async () => {
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(false);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(false);
     jest.spyOn(noteRepository, 'findById').mockResolvedValue({
       id: 'note-1',
       title: 'Belajar Node',
@@ -147,7 +147,7 @@ describe('note-controller', () => {
 
   it('should update a note by id', async () => {
     const note = { id: 'note-1', title: 'Catatan update' };
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(true);
     jest.spyOn(noteRepository, 'updateById').mockResolvedValue(note);
 
     await updateNoteById(
@@ -163,7 +163,7 @@ describe('note-controller', () => {
       res
     );
 
-    expect(noteRepository.verifyNoteOwner).toHaveBeenCalledWith(
+    expect(noteRepository.verifyNoteAccess).toHaveBeenCalledWith(
       'note-1',
       'user-1'
     );
@@ -183,7 +183,7 @@ describe('note-controller', () => {
   });
 
   it('should throw not found when user does not own the note update target', async () => {
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(false);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(false);
     jest.spyOn(noteRepository, 'updateById').mockResolvedValue({
       id: 'note-1',
     });
@@ -207,7 +207,7 @@ describe('note-controller', () => {
   });
 
   it('should delete a note by id', async () => {
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(true);
     jest.spyOn(noteRepository, 'deleteById').mockResolvedValue('note-1');
 
     await deleteNoteById(
@@ -215,7 +215,7 @@ describe('note-controller', () => {
       res
     );
 
-    expect(noteRepository.verifyNoteOwner).toHaveBeenCalledWith(
+    expect(noteRepository.verifyNoteAccess).toHaveBeenCalledWith(
       'note-1',
       'user-1'
     );
@@ -230,7 +230,7 @@ describe('note-controller', () => {
   });
 
   it('should throw not found when user does not own the note delete target', async () => {
-    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(false);
+    jest.spyOn(noteRepository, 'verifyNoteAccess').mockResolvedValue(false);
     jest.spyOn(noteRepository, 'deleteById').mockResolvedValue('note-1');
 
     await expect(

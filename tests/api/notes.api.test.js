@@ -8,33 +8,65 @@ import {
 } from '@jest/globals';
 import request from 'supertest';
 import app from '../../src/app.js';
+import collaborationRepository from '../../src/modules/collaborations/collaborations.repository.js';
 import noteRepository from '../../src/modules/notes/notes.repository.js';
 import tokenManager from '../../src/shared/utils/token-manager.js';
 import {
+  clearCollaborationsTable,
   clearNotesTable,
+  clearUsersTable,
   closeTestDatabase,
+  seedCollaboration,
   seedNote,
+  seedUser,
   setupTestDatabase,
 } from '../helpers/database.js';
 
 describe('Notes API', () => {
   let accessToken;
   let anotherAccessToken;
+  let collaboratorAccessToken;
 
   beforeAll(async () => {
     await setupTestDatabase();
   });
 
   beforeEach(async () => {
+    await clearCollaborationsTable();
     await clearNotesTable();
+    await clearUsersTable();
+
+    await seedUser({
+      id: 'user-notes-api',
+      username: 'usernotesapi',
+      fullname: 'User Notes API',
+      password: 'hashed-password',
+    });
+    await seedUser({
+      id: 'user-another-notes-api',
+      username: 'useranothernotesapi',
+      fullname: 'User Another Notes API',
+      password: 'hashed-password',
+    });
+    await seedUser({
+      id: 'user-collaborator-notes-api',
+      username: 'usercollaboratornotesapi',
+      fullname: 'User Collaborator Notes API',
+      password: 'hashed-password',
+    });
+
     accessToken = tokenManager.generateAccessToken({ id: 'user-notes-api' });
     anotherAccessToken = tokenManager.generateAccessToken({
       id: 'user-another-notes-api',
+    });
+    collaboratorAccessToken = tokenManager.generateAccessToken({
+      id: 'user-collaborator-notes-api',
     });
   });
 
   afterAll(async () => {
     await noteRepository.close();
+    await collaborationRepository.close();
     await closeTestDatabase();
   });
 
@@ -276,6 +308,123 @@ describe('Notes API', () => {
       data: null,
       message: 'Gagal menghapus catatan. Id tidak ditemukan',
       status: 'failed',
+    });
+  });
+
+  it('should return shared note in list for collaborator', async () => {
+    await seedNote({
+      id: 'note-shared-list',
+      owner: 'user-notes-api',
+      title: 'Catatan dibagikan',
+    });
+    await seedCollaboration({
+      id: 'collab-shared-list',
+      noteId: 'note-shared-list',
+      userId: 'user-collaborator-notes-api',
+    });
+
+    const response = await request(app)
+      .get('/notes')
+      .set('Authorization', `Bearer ${collaboratorAccessToken}`);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.data.notes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'note-shared-list',
+          title: 'Catatan dibagikan',
+        }),
+      ])
+    );
+  });
+
+  it('should return note detail when user is collaborator', async () => {
+    await seedNote({
+      id: 'note-shared-detail',
+      owner: 'user-notes-api',
+      title: 'Catatan detail kolaborator',
+      body: 'Isi detail kolaborator',
+      tags: ['shared'],
+    });
+    await seedCollaboration({
+      id: 'collab-shared-detail',
+      noteId: 'note-shared-detail',
+      userId: 'user-collaborator-notes-api',
+    });
+
+    const response = await request(app)
+      .get('/notes/note-shared-detail')
+      .set('Authorization', `Bearer ${collaboratorAccessToken}`);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      code: 200,
+      data: {
+        note: expect.objectContaining({
+          id: 'note-shared-detail',
+          title: 'Catatan detail kolaborator',
+        }),
+      },
+      message: 'Catatan sukses ditampilkan',
+      status: 'success',
+    });
+  });
+
+  it('should update note when user is collaborator', async () => {
+    await seedNote({
+      id: 'note-shared-update',
+      owner: 'user-notes-api',
+      title: 'Judul lama',
+    });
+    await seedCollaboration({
+      id: 'collab-shared-update',
+      noteId: 'note-shared-update',
+      userId: 'user-collaborator-notes-api',
+    });
+
+    const response = await request(app)
+      .put('/notes/note-shared-update')
+      .set('Authorization', `Bearer ${collaboratorAccessToken}`)
+      .send({
+        title: 'Judul kolaborator baru',
+        body: 'Isi kolaborator baru',
+        tags: ['shared-updated'],
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      code: 200,
+      data: expect.objectContaining({
+        id: 'note-shared-update',
+        title: 'Judul kolaborator baru',
+      }),
+      message: 'Catatan berhasil diperbarui',
+      status: 'success',
+    });
+  });
+
+  it('should delete note when user is collaborator', async () => {
+    await seedNote({
+      id: 'note-shared-delete',
+      owner: 'user-notes-api',
+      title: 'Catatan akan dihapus kolaborator',
+    });
+    await seedCollaboration({
+      id: 'collab-shared-delete',
+      noteId: 'note-shared-delete',
+      userId: 'user-collaborator-notes-api',
+    });
+
+    const response = await request(app)
+      .delete('/notes/note-shared-delete')
+      .set('Authorization', `Bearer ${collaboratorAccessToken}`);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      code: 200,
+      data: 'note-shared-delete',
+      message: 'Catatan berhasil dihapus',
+      status: 'success',
     });
   });
 });
