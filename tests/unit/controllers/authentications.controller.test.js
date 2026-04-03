@@ -188,4 +188,24 @@ describe('authentications.controller', () => {
       )
     ).rejects.toBeInstanceOf(InvariantError);
   });
+
+  it('should throw InvariantError when token disappears during deletion', async () => {
+    jest
+      .spyOn(authenticationRepository, 'isRefreshTokenExists')
+      .mockResolvedValue(true);
+    jest
+      .spyOn(authenticationRepository, 'deleteRefreshToken')
+      .mockResolvedValue(null);
+
+    await expect(
+      deleteAuthentication(
+        {
+          validated: {
+            refreshToken: 'refresh-token',
+          },
+        },
+        res
+      )
+    ).rejects.toBeInstanceOf(InvariantError);
+  });
 });

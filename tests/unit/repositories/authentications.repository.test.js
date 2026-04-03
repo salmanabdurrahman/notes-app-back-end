@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { NotFoundError } from '../../../src/core/errors/index.js';
 import { AuthenticationRepository } from '../../../src/modules/authentications/authentications.repository.js';
 
 describe('AuthenticationRepository', () => {
@@ -44,12 +43,12 @@ describe('AuthenticationRepository', () => {
     expect(deletedToken).toBe('refresh-token');
   });
 
-  it('should throw NotFoundError when deleting unknown refresh token', async () => {
+  it('should return null when deleting unknown refresh token', async () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
     await expect(
       repository.deleteRefreshToken('missing-token')
-    ).rejects.toBeInstanceOf(NotFoundError);
+    ).resolves.toBeNull();
   });
 
   it('should return true when refresh token exists', async () => {

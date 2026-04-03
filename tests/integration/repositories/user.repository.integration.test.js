@@ -8,7 +8,6 @@ import {
 } from '@jest/globals';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../../src/config/database.js';
-import { NotFoundError } from '../../../src/core/errors/index.js';
 import { UserRepository } from '../../../src/modules/users/users.repository.js';
 import {
   clearUsersTable,
@@ -60,10 +59,8 @@ describe('UserRepository integration', () => {
     });
   });
 
-  it('should throw NotFoundError when user id does not exist', async () => {
-    await expect(repository.findById('user-404')).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+  it('should return null when user id does not exist', async () => {
+    await expect(repository.findById('user-404')).resolves.toBeNull();
   });
 
   it('should verify username availability', async () => {

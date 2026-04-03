@@ -1,7 +1,6 @@
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import { Pool } from 'pg';
-import { NotFoundError } from '../../core/errors/index.js';
 import { getDatabaseUrl } from '../../config/database.js';
 
 class UserRepository {
@@ -29,11 +28,7 @@ class UserRepository {
     };
 
     const result = await this.getPool().query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal mengambil pengguna. Id tidak ditemukan');
-    }
-
-    return result.rows[0];
+    return result.rows[0] ?? null;
   }
 
   async create({ username, fullname, password }) {

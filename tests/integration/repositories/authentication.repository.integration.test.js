@@ -8,7 +8,6 @@ import {
 } from '@jest/globals';
 import { Pool } from 'pg';
 import { getDatabaseUrl } from '../../../src/config/database.js';
-import { NotFoundError } from '../../../src/core/errors/index.js';
 import { AuthenticationRepository } from '../../../src/modules/authentications/authentications.repository.js';
 import {
   clearAuthenticationsTable,
@@ -65,9 +64,9 @@ describe('AuthenticationRepository integration', () => {
     ).resolves.toBe(false);
   });
 
-  it('should throw NotFoundError when deleting missing refresh token', async () => {
+  it('should return null when deleting missing refresh token', async () => {
     await expect(
       repository.deleteRefreshToken('missing-token')
-    ).rejects.toBeInstanceOf(NotFoundError);
+    ).resolves.toBeNull();
   });
 });

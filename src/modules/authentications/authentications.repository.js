@@ -1,6 +1,5 @@
 import { nanoid } from 'nanoid';
 import { Pool } from 'pg';
-import { NotFoundError } from '../../core/errors/index.js';
 import { getDatabaseUrl } from '../../config/database.js';
 
 class AuthenticationRepository {
@@ -44,11 +43,7 @@ class AuthenticationRepository {
     };
 
     const result = await this.getPool().query(query);
-    if (!result.rows.length) {
-      throw new NotFoundError('Gagal menghapus token. Token tidak ditemukan');
-    }
-
-    return result.rows[0].token;
+    return result.rows[0]?.token ?? null;
   }
 
   async isRefreshTokenExists(token) {

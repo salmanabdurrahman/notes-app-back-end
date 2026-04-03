@@ -1,4 +1,4 @@
-import { InvariantError } from '../../core/errors/index.js';
+import { InvariantError, NotFoundError } from '../../core/errors/index.js';
 import userRepository from './users.repository.js';
 import sendResponse from '../../shared/utils/response.js';
 
@@ -30,5 +30,9 @@ export async function getUserById(req, res) {
   const { id } = req.params;
 
   const user = await userRepository.findById(id);
+  if (!user) {
+    throw new NotFoundError('Gagal mengambil pengguna. Id tidak ditemukan');
+  }
+
   return sendResponse(res, 200, 'Pengguna sukses ditampilkan', { user });
 }

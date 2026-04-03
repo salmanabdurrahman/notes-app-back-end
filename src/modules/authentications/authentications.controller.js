@@ -54,7 +54,11 @@ export async function deleteAuthentication(req, res) {
     throw new InvariantError('Refresh token tidak valid');
   }
 
-  await authenticationRepository.deleteRefreshToken(refreshToken);
+  const deletedToken =
+    await authenticationRepository.deleteRefreshToken(refreshToken);
+  if (!deletedToken) {
+    throw new InvariantError('Refresh token tidak valid');
+  }
 
   return sendResponse(res, 200, 'Logout berhasil', null);
 }

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import bcrypt from 'bcrypt';
-import { NotFoundError } from '../../../src/core/errors/index.js';
 import { UserRepository } from '../../../src/modules/users/users.repository.js';
 
 describe('UserRepository', () => {
@@ -30,12 +29,10 @@ describe('UserRepository', () => {
     expect(user).toEqual(row);
   });
 
-  it('should throw NotFoundError when user is not found by id', async () => {
+  it('should return null when user is not found by id', async () => {
     mockPool.query.mockResolvedValue({ rows: [] });
 
-    await expect(repository.findById('missing-user')).rejects.toBeInstanceOf(
-      NotFoundError
-    );
+    await expect(repository.findById('missing-user')).resolves.toBeNull();
   });
 
   it('should create a user with hashed password and return inserted row', async () => {

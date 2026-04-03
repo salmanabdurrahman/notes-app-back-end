@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import {
-  InvariantError,
-  NotFoundError,
-} from '../../../src/core/errors/index.js';
+import { InvariantError } from '../../../src/core/errors/index.js';
 import userRepository from '../../../src/modules/users/users.repository.js';
 import {
   createUser,
@@ -94,12 +91,8 @@ describe('users.controller', () => {
     });
   });
 
-  it('should propagate repository error when user id is not found', async () => {
-    jest
-      .spyOn(userRepository, 'findById')
-      .mockRejectedValue(
-        new NotFoundError('Gagal mengambil pengguna. Id tidak ditemukan')
-      );
+  it('should throw not found error when user id is not found', async () => {
+    jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
 
     await expect(
       getUserById({ params: { id: 'user-404' } }, res)
