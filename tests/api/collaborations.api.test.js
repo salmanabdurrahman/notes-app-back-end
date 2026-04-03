@@ -190,6 +190,30 @@ describe('Collaborations API', () => {
     });
   });
 
+  it('should return 404 when collaborator user id is not found', async () => {
+    await seedNote({
+      id: 'note-missing-user',
+      owner: 'user-owner-collab-api',
+      title: 'Owner API note',
+    });
+
+    const response = await request(app)
+      .post('/collaborations')
+      .set('Authorization', `Bearer ${ownerAccessToken}`)
+      .send({
+        noteId: 'note-missing-user',
+        userId: 'user-not-exists',
+      });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toEqual({
+      code: 404,
+      data: null,
+      message: 'Pengguna tidak ditemukan',
+      status: 'failed',
+    });
+  });
+
   it('should reject unauthorized request when access token is missing', async () => {
     const response = await request(app).post('/collaborations').send({
       noteId: 'note-1',

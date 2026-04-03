@@ -1,6 +1,7 @@
 import { InvariantError, NotFoundError } from '../../core/errors/index.js';
 import collaborationRepository from './collaborations.repository.js';
 import noteRepository from '../notes/notes.repository.js';
+import userRepository from '../users/users.repository.js';
 import sendResponse from '../../shared/utils/response.js';
 
 export async function addCollaboration(req, res) {
@@ -9,6 +10,11 @@ export async function addCollaboration(req, res) {
   const isOwner = await noteRepository.verifyNoteOwner(noteId, req.user.id);
   if (!isOwner) {
     throw new NotFoundError('Catatan tidak ditemukan');
+  }
+
+  const user = await userRepository.findById(userId);
+  if (!user) {
+    throw new NotFoundError('Pengguna tidak ditemukan');
   }
 
   const collaboration = await collaborationRepository.addCollaboration({

@@ -9,6 +9,7 @@ import {
   deleteCollaboration,
 } from '../../../src/modules/collaborations/collaborations.controller.js';
 import noteRepository from '../../../src/modules/notes/notes.repository.js';
+import userRepository from '../../../src/modules/users/users.repository.js';
 
 function createResponseMock() {
   return {
@@ -27,6 +28,7 @@ describe('collaborations.controller', () => {
 
   it('should add collaboration and return collaboration id', async () => {
     jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(userRepository, 'findById').mockResolvedValue({ id: 'user-2' });
     jest
       .spyOn(collaborationRepository, 'addCollaboration')
       .mockResolvedValue({ id: 'collab-1' });
@@ -46,6 +48,7 @@ describe('collaborations.controller', () => {
       'note-1',
       'owner-1'
     );
+    expect(userRepository.findById).toHaveBeenCalledWith('user-2');
     expect(collaborationRepository.addCollaboration).toHaveBeenCalledWith({
       noteId: 'note-1',
       userId: 'user-2',
@@ -61,6 +64,7 @@ describe('collaborations.controller', () => {
 
   it('should throw NotFoundError when note does not belong to requester', async () => {
     jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(false);
+    jest.spyOn(userRepository, 'findById').mockResolvedValue({ id: 'user-2' });
     jest
       .spyOn(collaborationRepository, 'addCollaboration')
       .mockResolvedValue({ id: 'collab-1' });
@@ -83,6 +87,7 @@ describe('collaborations.controller', () => {
 
   it('should throw InvariantError when collaboration insertion fails', async () => {
     jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(userRepository, 'findById').mockResolvedValue({ id: 'user-2' });
     jest
       .spyOn(collaborationRepository, 'addCollaboration')
       .mockResolvedValue(null);
@@ -99,6 +104,29 @@ describe('collaborations.controller', () => {
         res
       )
     ).rejects.toBeInstanceOf(InvariantError);
+  });
+
+  it('should throw NotFoundError when collaborator user id is missing', async () => {
+    jest.spyOn(noteRepository, 'verifyNoteOwner').mockResolvedValue(true);
+    jest.spyOn(userRepository, 'findById').mockResolvedValue(null);
+    jest
+      .spyOn(collaborationRepository, 'addCollaboration')
+      .mockResolvedValue({ id: 'collab-1' });
+
+    await expect(
+      addCollaboration(
+        {
+          user: { id: 'owner-1' },
+          validated: {
+            noteId: 'note-1',
+            userId: 'user-missing',
+          },
+        },
+        res
+      )
+    ).rejects.toBeInstanceOf(NotFoundError);
+
+    expect(collaborationRepository.addCollaboration).not.toHaveBeenCalled();
   });
 
   it('should delete collaboration and return success response', async () => {
