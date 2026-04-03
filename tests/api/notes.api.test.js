@@ -163,6 +163,7 @@ describe('Notes API', () => {
           id: 'note-detail',
           tags: ['detail'],
           title: 'Catatan detail',
+          username: 'usernotesapi',
         },
       },
       message: 'Catatan sukses ditampilkan',
@@ -363,6 +364,7 @@ describe('Notes API', () => {
         note: expect.objectContaining({
           id: 'note-shared-detail',
           title: 'Catatan detail kolaborator',
+          username: 'usernotesapi',
         }),
       },
       message: 'Catatan sukses ditampilkan',

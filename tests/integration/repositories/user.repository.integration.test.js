@@ -74,4 +74,24 @@ describe('UserRepository integration', () => {
     await expect(repository.isUsernameTaken('johndoe')).resolves.toBe(true);
     await expect(repository.isUsernameTaken('janedoe')).resolves.toBe(false);
   });
+
+  it('should retrieve user by username', async () => {
+    await seedUser({
+      id: 'user-lookup',
+      username: 'lookupuser',
+      fullname: 'Lookup User',
+      password: 'hashed-password',
+    });
+
+    await expect(
+      repository.getUserByUsername('lookupuser')
+    ).resolves.toMatchObject({
+      id: 'user-lookup',
+      username: 'lookupuser',
+      fullname: 'Lookup User',
+    });
+    await expect(
+      repository.getUserByUsername('missinguser')
+    ).resolves.toBeNull();
+  });
 });

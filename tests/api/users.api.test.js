@@ -121,4 +121,42 @@ describe('Users API', () => {
       status: 'failed',
     });
   });
+
+  it('should return user detail via GET /users?username=', async () => {
+    await seedUser({
+      id: 'user-by-username',
+      username: 'lookupuser',
+      fullname: 'Lookup User',
+      password: 'hashed-password',
+    });
+
+    const response = await request(app).get('/users').query({
+      username: 'lookupuser',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toMatchObject({
+      code: 200,
+      data: {
+        user: {
+          id: 'user-by-username',
+          username: 'lookupuser',
+          fullname: 'Lookup User',
+        },
+      },
+      message: 'Pengguna sukses ditampilkan',
+      status: 'success',
+    });
+  });
+
+  it('should reject invalid query via GET /users', async () => {
+    const response = await request(app).get('/users');
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toMatchObject({
+      code: 400,
+      data: null,
+      status: 'failed',
+    });
+  });
 });

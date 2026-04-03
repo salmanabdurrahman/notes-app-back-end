@@ -4,6 +4,7 @@ import userRepository from '../../../src/modules/users/users.repository.js';
 import {
   createUser,
   getUserById,
+  getUserByUsername,
 } from '../../../src/modules/users/users.controller.js';
 
 function createResponseMock() {
@@ -97,5 +98,33 @@ describe('users.controller', () => {
     await expect(
       getUserById({ params: { id: 'user-404' } }, res)
     ).rejects.toThrow('Gagal mengambil pengguna. Id tidak ditemukan');
+  });
+
+  it('should return one user by username', async () => {
+    const user = {
+      id: 'user-1',
+      username: 'johndoe',
+      fullname: 'John Doe',
+    };
+    jest.spyOn(userRepository, 'getUserByUsername').mockResolvedValue(user);
+
+    await getUserByUsername({ validated: { username: 'johndoe' } }, res);
+
+    expect(userRepository.getUserByUsername).toHaveBeenCalledWith('johndoe');
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      code: 200,
+      data: { user },
+      message: 'Pengguna sukses ditampilkan',
+      status: 'success',
+    });
+  });
+
+  it('should throw not found error when username is not found', async () => {
+    jest.spyOn(userRepository, 'getUserByUsername').mockResolvedValue(null);
+
+    await expect(
+      getUserByUsername({ validated: { username: 'missing-user' } }, res)
+    ).rejects.toThrow('Gagal mengambil pengguna. Username tidak ditemukan');
   });
 });

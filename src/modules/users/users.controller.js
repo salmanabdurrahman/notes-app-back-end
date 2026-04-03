@@ -36,3 +36,16 @@ export async function getUserById(req, res) {
 
   return sendResponse(res, 200, 'Pengguna sukses ditampilkan', { user });
 }
+
+export async function getUserByUsername(req, res) {
+  const { username } = req.validated ?? req.query;
+
+  const user = await userRepository.getUserByUsername(username);
+  if (!user) {
+    throw new NotFoundError(
+      'Gagal mengambil pengguna. Username tidak ditemukan'
+    );
+  }
+
+  return sendResponse(res, 200, 'Pengguna sukses ditampilkan', { user });
+}

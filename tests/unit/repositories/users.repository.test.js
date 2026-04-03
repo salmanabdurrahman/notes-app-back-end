@@ -77,6 +77,28 @@ describe('UserRepository', () => {
     expect(isTaken).toBe(false);
   });
 
+  it('should return a user by username', async () => {
+    const row = { id: 'user-1', username: 'johndoe', fullname: 'John Doe' };
+    mockPool.query.mockResolvedValue({ rows: [row] });
+
+    const user = await repository.getUserByUsername('johndoe');
+
+    expect(mockPool.query).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: ['johndoe'],
+      })
+    );
+    expect(user).toEqual(row);
+  });
+
+  it('should return null when user is not found by username', async () => {
+    mockPool.query.mockResolvedValue({ rows: [] });
+
+    await expect(
+      repository.getUserByUsername('missing-user')
+    ).resolves.toBeNull();
+  });
+
   it('should close the underlying pool', async () => {
     await repository.close();
 

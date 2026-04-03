@@ -45,9 +45,17 @@ class NoteRepository {
   async findById(id) {
     const query = {
       text: `
-        SELECT id, title, body, tags, created_at, updated_at
-        FROM notes
-        WHERE id = $1
+        SELECT n.id,
+            n.title,
+            n.body,
+            n.tags,
+            n.created_at,
+            n.updated_at,
+            u.username
+        FROM notes n
+        JOIN users u
+          ON u.id = n.owner
+        WHERE n.id = $1
       `,
       values: [id],
     };

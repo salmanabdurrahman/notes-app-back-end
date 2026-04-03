@@ -86,6 +86,20 @@ class UserRepository {
     return user;
   }
 
+  async getUserByUsername(username) {
+    const query = {
+      text: `
+        SELECT id, username, fullname, created_at, updated_at
+        FROM users
+        WHERE username = $1
+      `,
+      values: [username],
+    };
+
+    const result = await this.getPool().query(query);
+    return result.rows[0] ?? null;
+  }
+
   async close() {
     if (!this.pool) {
       return;
